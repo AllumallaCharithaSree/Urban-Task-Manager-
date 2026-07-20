@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Urban Task Manager Pro</title>
+  <style>
+    :root {
+      --bg: #0f172a; --surface: #1e293b; --card: #162032; --border: #2d3f57;
+      --text: #e2e8f0; --muted: #7c8fa6; --primary: #3b82f6; --success: #10b981;
+      --warning: #f59e0b; --danger: #ef4444; --accent: #8b5cf6;
+    }
+    [data-theme="light"] {
+      --bg: #f0f4f8; --surface: #ffffff; --card: #f8fafc; --border: #cbd5e1;
+      --text: #1e293b; --muted: #64748b; --primary: #2563eb; --success: #059669;
+      --warning: #d97706; --danger: #dc2626; --accent: #7c3aed;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; padding: 20px; font-size: 14px; }
+    .wrap { max-width: 1280px; margin: 0 auto; }
+    header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+    .logo { display: flex; align-items: center; gap: 12px; }
+    .logo-icon { width: 40px; height: 40px; background: var(--primary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .logo h1 { font-size: 18px; font-weight: 700; color: var(--text); }
+    .logo p { font-size: 12px; color: var(--muted); }
+    .header-actions { display: flex; gap: 8px; align-items: center; }
+    .pill-btn { padding: 6px 14px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface); color: var(--text); cursor: pointer; font-size: 12px; font-weight: 600; }
+    .pill-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .icon-btn { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 20px; }
+    .stat { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; position: relative; overflow: hidden; }
+    .stat-label { font-size: 11px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+    .stat-val { font-size: 28px; font-weight: 800; line-height: 1; }
+    .stat-bar { position: absolute; bottom: 0; left: 0; right: 0; height: 3px; border-radius: 0 0 12px 12px; }
+    .s-blue .stat-val { color: var(--primary); } .s-blue .stat-bar { background: var(--primary); }
+    .s-amber .stat-val { color: var(--warning); } .s-amber .stat-bar { background: var(--warning); }
+    .s-green .stat-val { color: var(--success); } .s-green .stat-bar { background: var(--success); }
+    .s-purple .stat-val { color: var(--accent); } .s-purple .stat-bar { background: var(--accent); }
+
+    .grid { display: grid; grid-template-columns: 360px 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 20px; }
+    .card-title { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+    .card-title span { font-size: 16px; }
+
+    .tabs { display: flex; gap: 4px; background: var(--bg); border-radius: 10px; padding: 4px; margin-bottom: 16px; }
+    .tab { flex: 1; padding: 6px; border: none; border-radius: 7px; background: transparent; color: var(--muted); cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s; }
+    .tab.active { background: var(--surface); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.2); }
+
+    .form-row { display: flex; gap: 10px; margin-bottom: 12px; }
+    .form-group { flex: 1; }
+    .form-group label { display: block; font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 5px; }
+    .form-group input, .form-group select, .form-group textarea {
+      width: 100%; padding: 9px 12px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--card); color: var(--text); font-size: 13px; outline: none;
+      transition: border-color 0.2s;
+    }
+    .form-group input:focus, .form-group select:focus { border-color: var(--primary); }
+    .form-group textarea { resize: vertical; min-height: 60px; }
+    .urgency-track { display: flex; align-items: center; gap: 10px; }
+    .urgency-track input[type=range] { flex: 1; -webkit-appearance: none; height: 4px; border-radius: 4px; background: var(--border); outline: none; border: none; padding: 0; }
+    .urgency-track input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--primary); cursor: pointer; }
+    .urgency-badge { min-width: 36px; padding: 4px 8px; border-radius: 6px; font-weight: 800; font-size: 13px; text-align: center; }
+
+    .submit-btn { width: 100%; padding: 11px; border-radius: 10px; border: none; background: var(--primary); color: white; font-weight: 700; font-size: 14px; cursor: pointer; margin-top: 8px; transition: opacity 0.2s; }
+    .submit-btn:hover { opacity: 0.9; }
+
+    .tbl-wrap { overflow: auto; border: 1px solid var(--border); border-radius: 10px; max-height: 340px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { padding: 10px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); background: var(--card); font-weight: 700; position: sticky; top: 0; text-align: left; white-space: nowrap; }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--border); font-size: 12px; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--card); }
+    .geo { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .pill { padding: 3px 10px; border-radius: 20px; font-size: 10px; font-weight: 800; text-transform: uppercase; display: inline-block; }
+    .p-pending { background: rgba(245,158,11,0.15); color: var(--warning); }
+    .p-assigned { background: rgba(59,130,246,0.15); color: var(--primary); }
+    .p-completed { background: rgba(16,185,129,0.15); color: var(--success); }
+    .urg-high { color: var(--danger); font-weight: 800; }
+    .urg-med { color: var(--warning); font-weight: 700; }
+    .urg-low { color: var(--success); font-weight: 600; }
+    .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+    .dot-green { background: var(--success); } .dot-amber { background: var(--warning); } .dot-red { background: var(--danger); }
+    .cat-badge { padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; display: inline-block; }
+    .cat-Medical { background: rgba(239,68,68,0.12); color: var(--danger); }
+    .cat-Maintenance { background: rgba(59,130,246,0.12); color: var(--primary); }
+    .cat-Technical { background: rgba(139,92,246,0.12); color: var(--accent); }
+    .cat-Utility { background: rgba(245,158,11,0.12); color: var(--warning); }
+    .cat-Fire { background: rgba(239,68,68,0.18); color: #ff6b35; }
+    .cat-Police { background: rgba(59,130,246,0.18); color: #60a5fa; }
+
+    .action-bar { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
+    .filter-group { display: flex; gap: 4px; }
+    .filter-btn { padding: 5px 12px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--muted); font-size: 11px; font-weight: 600; cursor: pointer; }
+    .filter-btn.on { background: var(--primary); border-color: var(--primary); color: white; }
+    .search-box { flex: 1; padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--card); color: var(--text); font-size: 12px; outline: none; }
+    .sync-btn { padding: 7px 14px; border-radius: 8px; border: none; background: var(--accent); color: white; font-weight: 700; font-size: 12px; cursor: pointer; }
+
+    .res-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; margin-top: 4px; }
+    .res-card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 14px; position: relative; }
+    .res-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+    .res-name { font-weight: 700; font-size: 13px; color: var(--text); }
+    .res-city { font-size: 11px; color: var(--muted); }
+    .res-status { font-size: 11px; font-weight: 700; display: flex; align-items: center; }
+    .load-bar-wrap { margin-top: 8px; }
+    .load-bar-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 4px; }
+    .load-bar-bg { height: 6px; background: var(--border); border-radius: 4px; overflow: hidden; }
+    .load-bar-fill { height: 100%; border-radius: 4px; transition: width 0.5s ease; }
+    .empty-row td { text-align: center; color: var(--muted); padding: 32px; font-size: 13px; }
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px 18px; font-size: 13px; font-weight: 600; box-shadow: 0 8px 24px rgba(0,0,0,0.3); z-index: 9999; display: none; color: var(--text); }
+  </style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🏙️</div>
+      <div>
+        <h1>Urban Task Manager Pro</h1>
+        <p>State-Level Resource Coordination & Dispatch</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="pill-btn" onclick="exportCSV()">⬇ Export</button>
+      <button class="pill-btn" onclick="clearCompleted()">🗑 Clear Done</button>
+      <button class="icon-btn" id="theme-btn" title="Toggle theme">🌙</button>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat s-blue"><div class="stat-label">Total Incidents</div><div class="stat-val" id="s-total">0</div><div class="stat-bar"></div></div>
+    <div class="stat s-amber"><div class="stat-label">Pending</div><div class="stat-val" id="s-pending">0</div><div class="stat-bar"></div></div>
+    <div class="stat s-blue"><div class="stat-label">Active Deployments</div><div class="stat-val" id="s-active">0</div><div class="stat-bar"></div></div>
+    <div class="stat s-green"><div class="stat-label">Completed</div><div class="stat-val" id="s-completed">0</div><div class="stat-bar"></div></div>
+    <div class="stat s-purple"><div class="stat-label">Resources Online</div><div class="stat-val" id="s-res">0</div><div class="stat-bar"></div></div>
+  </div>
+
+  <div class="grid">
+    <section class="card">
+      <div class="card-title"><span>📍</span> Report New Incident</div>
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab(0)">Details</button>
+        <button class="tab" onclick="switchTab(1)">Location</button>
+        <button class="tab" onclick="switchTab(2)">Notes</button>
+      </div>
+
+      <div id="tab-0">
+        <div class="form-row">
+          <div class="form-group">
+            <label>State</label>
+            <select id="state-sel" onchange="updateCities()">
+              <option>Telangana</option><option>Maharashtra</option><option>Karnataka</option>
+              <option>Delhi</option><option>Tamil Nadu</option><option>Gujarat</option>
+              <option>Rajasthan</option><option>West Bengal</option><option>Uttar Pradesh</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>City</label>
+            <select id="city-sel"></select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Category</label>
+          <select id="cat-sel" onchange="autoPriority()">
+            <option value="Maintenance">🔧 Infrastructure / Maintenance</option>
+            <option value="Medical">🏥 Medical Emergency</option>
+            <option value="Utility">⚡ Utility Failure</option>
+            <option value="Technical">💻 Technical Issue</option>
+            <option value="Fire">🔥 Fire & Safety</option>
+            <option value="Police">🚔 Law & Order</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Issue Description</label>
+          <input id="title-inp" placeholder="e.g. Power outage at Ring Road junction" />
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Urgency Level</label>
+          <div class="urgency-track">
+            <input type="range" id="urg-range" min="1" max="10" value="5" oninput="updateUrgBadge()" />
+            <div class="urgency-badge" id="urg-badge" style="background:rgba(245,158,11,0.15);color:var(--warning);">5</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-1" style="display:none">
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Location Zone</label>
+          <select id="zone-sel">
+            <option value="Residential">🏠 Residential Area</option>
+            <option value="Hospital">🏥 Hospital Zone (Priority)</option>
+            <option value="Education">🎓 Education Hub</option>
+            <option value="Highway">🛣️ High-Speed Corridor</option>
+            <option value="Industrial">🏭 Industrial Zone</option>
+            <option value="Commercial">🏢 Commercial District</option>
+            <option value="Government">🏛️ Government Complex</option>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Street / Landmark</label>
+          <input id="street-inp" placeholder="e.g. Near Lakdi-ka-pool metro" />
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>GPS Coordinates (optional)</label>
+          <input id="gps-inp" placeholder="e.g. 17.385, 78.486" />
+        </div>
+      </div>
+
+      <div id="tab-2" style="display:none">
+        <div class="form-group" style="margin-bottom:12px">
+          <label>Reporter Name</label>
+          <input id="reporter-inp" placeholder="Officer / Citizen name" />
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>Additional Notes</label>
+          <textarea id="notes-inp" placeholder="Any extra context, injured count, hazard info..."></textarea>
+        </div>
+      </div>
+
+      <button class="submit-btn" onclick="submitTask()">⚡ Initiate Dispatch</button>
+    </section>
+
+    <section class="card">
+      <div class="action-bar">
+        <input class="search-box" id="search-inp" placeholder="Search incidents..." oninput="renderTasks()" />
+        <div class="filter-group" id="filter-group">
+          <button class="filter-btn on" onclick="setFilter('all', this)">All</button>
+          <button class="filter-btn" onclick="setFilter('pending', this)">Pending</button>
+          <button class="filter-btn" onclick="setFilter('assigned', this)">Active</button>
+          <button class="filter-btn" onclick="setFilter('completed', this)">Done</button>
+        </div>
+        <button class="sync-btn" onclick="processTasks()">⟳ Sync</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            <th>Incident</th><th>Category</th><th>Priority</th><th>Status</th><th>Unit</th><th>Time</th>
+          </tr></thead>
+          <tbody id="tasks-tbody"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <section class="card" style="margin-bottom:16px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <div class="card-title" style="margin-bottom:0"><span>🚛</span> Field Resources</div>
+      <button class="pill-btn" onclick="showAddResource()">+ Add Resource</button>
+    </div>
+    <div class="res-grid" id="res-grid"></div>
+  </section>
+
+  <section class="card">
+    <div class="card-title"><span>📊</span> Incident Analytics</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px">
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:10px;text-transform:uppercase">By Category</div>
+        <div id="cat-breakdown"></div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:10px;text-transform:uppercase">By City</div>
+        <div id="city-breakdown"></div>
+      </div>
+      <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:10px;text-transform:uppercase">Resource Utilization</div>
+        <div id="res-util"></div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const cityMap = {
+    "Telangana": ["Hyderabad","Warangal","Nizamabad","Karimnagar"],
+    "Maharashtra": ["Mumbai","Pune","Nagpur","Nashik","Aurangabad"],
+    "Karnataka": ["Bengaluru","Mysuru","Mangaluru","Hubli"],
+    "Delhi": ["New Delhi","Dwarka","Rohini","Noida Border"],
+    "Tamil Nadu": ["Chennai","Coimbatore","Madurai","Salem"],
+    "Gujarat": ["Ahmedabad","Surat","Vadodara","Rajkot"],
+    "Rajasthan": ["Jaipur","Jodhpur","Udaipur","Kota"],
+    "West Bengal": ["Kolkata","Howrah","Durgapur","Siliguri"],
+    "Uttar Pradesh": ["Lucknow","Kanpur","Agra","Varanasi","Noida"]
+  };
+
+  let tasks = [];
+  let activeFilter = 'all';
+
+  let resources = [
+    { id:1, name:"Alpha Emergency", city:"Hyderabad", state:"Telangana", type:"Medical", load:0, cap:2 },
+    { id:2, name:"Telangana Civil Works", city:"Hyderabad", state:"Telangana", type:"Maintenance", load:0, cap:3 },
+    { id:3, name:"Warangal Rapid Response", city:"Warangal", state:"Telangana", type:"Medical", load:0, cap:2 },
+    { id:4, name:"Mumbai First Response", city:"Mumbai", state:"Maharashtra", type:"Medical", load:0, cap:3 },
+    { id:5, name:"Pune Tech Unit", city:"Pune", state:"Maharashtra", type:"Technical", load:0, cap:4 },
+    { id:6, name:"Karnataka Power Grid", city:"Bengaluru", state:"Karnataka", type:"Utility", load:0, cap:2 },
+    { id:7, name:"Delhi Emergency Corps", city:"New Delhi", state:"Delhi", type:"Medical", load:0, cap:3 },
+    { id:8, name:"Chennai Fire Brigade", city:"Chennai", state:"Tamil Nadu", type:"Fire", load:0, cap:2 },
+    { id:9, name:"Ahmedabad Safety Force", city:"Ahmedabad", state:"Gujarat", type:"Police", load:0, cap:3 },
+    { id:10, name:"Kolkata Urban Ops", city:"Kolkata", state:"West Bengal", type:"Maintenance", load:0, cap:2 },
+  ];
+
+  function toast(msg, color) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    t.style.borderLeft = `3px solid ${color || 'var(--primary)'}`;
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.style.display='none', 3000);
+  }
+
+  function updateCities() {
+    const state = document.getElementById('state-sel').value;
+    const cs = document.getElementById('city-sel');
+    cs.innerHTML = (cityMap[state]||[]).map(c=>`<option>${c}</option>`).join('');
+  }
+
+  function switchTab(n) {
+    for(let i=0;i<3;i++){
+      document.getElementById('tab-'+i).style.display = i===n?'block':'none';
+      document.querySelectorAll('.tab')[i].classList.toggle('active', i===n);
+    }
+  }
+
+  function autoPriority() {
+    const cat = document.getElementById('cat-sel').value;
+    const r = document.getElementById('urg-range');
+    if(cat==='Medical'||cat==='Fire') r.value=9;
+    else if(cat==='Police') r.value=8;
+    else if(cat==='Utility') r.value=7;
+    else r.value=5;
+    updateUrgBadge();
+  }
+
+  function updateUrgBadge() {
+    const v = parseInt(document.getElementById('urg-range').value);
+    const b = document.getElementById('urg-badge');
+    b.textContent = v;
+    if(v>=8){ b.style.background='rgba(239,68,68,0.15)'; b.style.color='var(--danger)'; }
+    else if(v>=5){ b.style.background='rgba(245,158,11,0.15)'; b.style.color='var(--warning)'; }
+    else { b.style.background='rgba(16,185,129,0.15)'; b.style.color='var(--success)'; }
+  }
+
+  function submitTask() {
+    const title = document.getElementById('title-inp').value.trim();
+    if(!title){ toast('Please enter an issue description', 'var(--danger)'); return; }
+    const urgency = parseInt(document.getElementById('urg-range').value);
+    const city = document.getElementById('city-sel').value;
+    const state = document.getElementById('state-sel').value;
+    const task = {
+      id: Date.now(),
+      title,
+      city, state,
+      category: document.getElementById('cat-sel').value,
+      zone: document.getElementById('zone-sel').value,
+      street: document.getElementById('street-inp').value,
+      reporter: document.getElementById('reporter-inp').value || 'Anonymous',
+      notes: document.getElementById('notes-inp').value,
+      urgency,
+      status: 'pending',
+      worker: '-',
+      time: new Date()
+    };
+    tasks.unshift(task);
+    document.getElementById('title-inp').value='';
+    document.getElementById('street-inp').value='';
+    document.getElementById('reporter-inp').value='';
+    document.getElementById('notes-inp').value='';
+    processTasks();
+    renderAll();
+    toast(`Incident reported: ${title}`, 'var(--primary)');
+  }
+
+  function processTasks() {
+    tasks.forEach(task => {
+      if(task.status==='pending') {
+        const typeMap = {
+          Medical:['Medical'], Fire:['Fire','Medical'], Police:['Police','Medical'],
+          Utility:['Utility','Technical'], Technical:['Technical','Utility'], Maintenance:['Maintenance','Technical']
+        };
+        const valid = typeMap[task.category]||[task.category];
+        const res = resources.find(r => r.city===task.city && r.load<r.cap && valid.includes(r.type));
+        if(res) {
+          task.status='assigned'; task.worker=res.name; res.load++;
+          renderAll();
+          const t = (11 - task.urgency) * 2000;
+          setTimeout(()=>{ task.status='completed'; res.load--; renderAll(); toast(`Completed: ${task.title}`, 'var(--success)'); }, t);
+        }
+      }
+    });
+    renderAll();
+  }
+
+  function setFilter(f, el) {
+    activeFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('on'));
+    el.classList.add('on');
+    renderTasks();
+  }
+
+  function renderTasks() {
+    const q = (document.getElementById('search-inp').value||'').toLowerCase();
+    let list = tasks.filter(t => {
+      const match = activeFilter==='all'||t.status===activeFilter;
+      const search = !q || t.title.toLowerCase().includes(q) || t.city.toLowerCase().includes(q) || t.category.toLowerCase().includes(q);
+      return match && search;
+    });
+    const tbody = document.getElementById('tasks-tbody');
+    if(!list.length){ tbody.innerHTML=`<tr class="empty-row"><td colspan="6">No incidents found</td></tr>`; return; }
+    const urgClass = u => u>=8?'urg-high':u>=5?'urg-med':'urg-low';
+    const elapsed = t => { const s=Math.floor((Date.now()-new Date(t).getTime())/1000); return s<60?s+'s ago':Math.floor(s/60)+'m ago'; };
+    tbody.innerHTML = list.map(t=>`
+      <tr>
+        <td><div style="font-weight:600;font-size:12px">${t.title}</div><div class="geo">${t.zone||''} • ${t.city}, ${t.state}</div></td>
+        <td><span class="cat-badge cat-${t.category}">${t.category}</span></td>
+        <td class="${urgClass(t.urgency)}">${t.urgency}/10</td>
+        <td><span class="pill p-${t.status}">${t.status}</span></td>
+        <td style="font-size:11px;color:var(--muted)">${t.worker}</td>
+        <td style="font-size:11px;color:var(--muted)">${elapsed(t.time)}</td>
+      </tr>`).join('');
+  }
+
+  function renderResources() {
+    const grid = document.getElementById('res-grid');
+    grid.innerHTML = resources.map(r => {
+      const pct = Math.round((r.load/r.cap)*100);
+      const busy = r.load>=r.cap;
+      const barColor = busy?'var(--danger)':r.load>0?'var(--warning)':'var(--success)';
+      return `<div class="res-card">
+        <div class="res-header">
+          <div><div class="res-name">${r.name}</div><div class="res-city">${r.city}, ${r.state}</div></div>
+          <div class="res-status" style="color:${busy?'var(--danger)':r.load>0?'var(--warning)':'var(--success)'}">
+            <span class="dot ${busy?'dot-red':r.load>0?'dot-amber':'dot-green'}"></span>${busy?'BUSY':r.load>0?'PARTIAL':'ONLINE'}
+          </div>
+        </div>
+        <span class="cat-badge cat-${r.type}">${r.type}</span>
+        <div class="load-bar-wrap">
+          <div class="load-bar-label"><span>Load</span><span>${r.load}/${r.cap}</span></div>
+          <div class="load-bar-bg"><div class="load-bar-fill" style="width:${pct}%;background:${barColor}"></div></div>
+        </div>
+      </div>`;
+    }).join('');
+    document.getElementById('s-res').textContent = resources.filter(r=>r.load<r.cap).length;
+  }
+
+  function renderAnalytics() {
+    const catCounts = {}; const cityCounts = {};
+    tasks.forEach(t => {
+      catCounts[t.category]=(catCounts[t.category]||0)+1;
+      cityCounts[t.city]=(cityCounts[t.city]||0)+1;
+    });
+    const catColors = {Medical:'var(--danger)',Maintenance:'var(--primary)',Technical:'var(--accent)',Utility:'var(--warning)',Fire:'#ff6b35',Police:'#60a5fa'};
+    const mkRows = (obj, colors) => Object.entries(obj).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>{
+      const max = Math.max(...Object.values(obj));
+      return `<div style="margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
+          <span style="color:var(--text)">${k}</span><span style="color:var(--muted)">${v}</span>
+        </div>
+        <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden">
+          <div style="height:100%;width:${Math.round((v/max)*100)}%;background:${colors?colors[k]||'var(--primary)':'var(--primary)'};border-radius:4px"></div>
+        </div>
+      </div>`;
+    }).join('') || '<div style="color:var(--muted);font-size:12px">No data yet</div>';
+    document.getElementById('cat-breakdown').innerHTML = mkRows(catCounts, catColors);
+    document.getElementById('city-breakdown').innerHTML = mkRows(cityCounts, null);
+    const totalCap = resources.reduce((s,r)=>s+r.cap,0);
+    const totalLoad = resources.reduce((s,r)=>s+r.load,0);
+    const pct = totalCap>0?Math.round((totalLoad/totalCap)*100):0;
+    document.getElementById('res-util').innerHTML = `
+      <div style="font-size:28px;font-weight:800;color:${pct>75?'var(--danger)':pct>40?'var(--warning)':'var(--success)'};">${pct}%</div>
+      <div style="font-size:11px;color:var(--muted);margin:4px 0 10px">Overall utilization</div>
+      <div style="height:6px;background:var(--border);border-radius:4px;overflow:hidden">
+        <div style="height:100%;width:${pct}%;background:${pct>75?'var(--danger)':pct>40?'var(--warning)':'var(--success)'};border-radius:4px;transition:width 0.5s"></div>
+      </div>
+      <div style="font-size:11px;color:var(--muted);margin-top:8px">${totalLoad} / ${totalCap} capacity used</div>`;
+  }
+
+  function renderAll() {
+    document.getElementById('s-total').textContent = tasks.length;
+    document.getElementById('s-pending').textContent = tasks.filter(t=>t.status==='pending').length;
+    document.getElementById('s-active').textContent = tasks.filter(t=>t.status==='assigned').length;
+    document.getElementById('s-completed').textContent = tasks.filter(t=>t.status==='completed').length;
+    renderTasks(); renderResources(); renderAnalytics();
+  }
+
+  function exportCSV() {
+    const rows = [['ID','Title','Category','City','State','Zone','Urgency','Status','Worker','Reporter','Time']];
+    tasks.forEach(t=>rows.push([t.id,t.title,t.category,t.city,t.state,t.zone||'',t.urgency,t.status,t.worker,t.reporter||'',new Date(t.time).toLocaleString()]));
+    const csv = rows.map(r=>r.map(c=>`"${c}"`).join(',')).join('\n');
+    const a=document.createElement('a'); a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv); a.download='incidents.csv'; a.click();
+    toast('CSV exported!', 'var(--success)');
+  }
+
+  function clearCompleted() {
+    const before = tasks.length;
+    tasks = tasks.filter(t=>t.status!=='completed');
+    renderAll();
+    toast(`Cleared ${before-tasks.length} completed tasks`, 'var(--muted)');
+  }
+
+  function showAddResource() {
+    const name = prompt('Resource name:'); if(!name) return;
+    const city = prompt('City:'); if(!city) return;
+    const state = prompt('State:'); if(!state) return;
+    const typeOpts = ['Medical','Maintenance','Technical','Utility','Fire','Police'];
+    const type = prompt('Type (Medical/Maintenance/Technical/Utility/Fire/Police):', 'Maintenance');
+    if(!typeOpts.includes(type)){ toast('Invalid type', 'var(--danger)'); return; }
+    const cap = parseInt(prompt('Capacity:','3')); if(!cap||isNaN(cap)) return;
+    resources.push({ id: Date.now(), name, city, state, type, load:0, cap });
+    renderAll(); toast(`Resource "${name}" added!`, 'var(--success)');
+  }
+
+  document.getElementById('theme-btn').addEventListener('click', () => {
+    const isLight = document.body.getAttribute('data-theme')==='light';
+    document.body.setAttribute('data-theme', isLight?'':'light');
+    document.getElementById('theme-btn').textContent = isLight?'🌙':'☀️';
+  });
+
+  updateCities();
+  updateUrgBadge();
+  renderAll();
+</script>
+</body>
+</html>
